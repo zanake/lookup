@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+// ISO 3166-1
+model Country {
+    id  Int   @id @default(autoincrement())
+    tag Bytes @default(dbgenerated("(uuid_to_bin(uuid(), true))")) @map("_id") @db.Binary(16)
+
+    name         String  @db.VarChar(255)
+    binary_code  String  @db.Char(2) /// ISO 3166-1 alpha-2: two-letter code
+    ternary_code String  @db.Char(3) /// ISO 3166-1 alpha-3: three-letter code
+    numeric_code String  @db.Char(3) /// ISO 3166-1 numeric: three-digit code
+    calling_code String? @db.VarChar(5) /// E.164 numbers prefix
+
+    created_at      DateTime          @default(now())
+    updated_at      DateTime          @updatedAt
+    CountryCurrency CountryCurrency[]
+}
+
+// ISO 4217
+model Currency {
+    id  Int   @id @default(autoincrement())
+    tag Bytes @default(dbgenerated("(uuid_to_bin(uuid(), true))")) @map("_id") @db.Binary(16)
+
+    name   String  @db.VarChar(255)
+    symbol String? @db.VarChar(255)
+
+    ternary_code String @db.Char(3)
+    numeric_code String @db.Char(3)
+    precision    Int    @default(0) @db.UnsignedTinyInt()
+
+    created_at      DateTime          @default(now())
+    updated_at      DateTime          @updatedAt
+    CountryCurrency CountryCurrency[]
+}
+
+model CountryCurrency {
+    country_id Int
+    country    Country @relation(fields: [country_id], references: [id])
+
+    currency_id Int
+    currency    Currency @relation(fields: [currency_id], references: [id])
+
+    issuer_country Boolean @default(false)
+
+    @@unique([country_id, currency_id, issuer_country])
+}
+
+model Emoji {
+    id  Int   @id @default(autoincrement())
+    tag Bytes @default(dbgenerated("(uuid_to_bin(uuid(), true))")) @map("_id") @db.Binary(16)
+
+    emoji                             String  @db.Char(2)
+    name                              String  @db.VarChar(255)
+    slug                              String  @db.VarChar(255)
+    group                             String  @db.VarChar(255)
+    emoji_version                     String  @db.VarChar(255)
+    unicode_version                   String  @db.VarChar(255)
+    skin_tone_support                 Boolean @default(false)
+    skin_tone_support_unicode_version String? @db.VarChar(255)
+}
